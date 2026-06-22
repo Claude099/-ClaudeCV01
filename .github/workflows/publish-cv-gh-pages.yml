@@ -1,0 +1,43 @@
+name: Build and Publish CV (gh-pages)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm i puppeteer http-server --no-audit --silent
+
+      - name: Start static server
+        run: |
+          ./node_modules/.bin/http-server -p 8080 &
+          sleep 2
+
+      - name: Generate PDF
+        run: node .github/scripts/generate-pdf.js
+
+      - name: Deploy dist/ to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          keep_files: true
